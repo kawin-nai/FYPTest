@@ -75,7 +75,7 @@ def draw_faces(path, faces):
 
 
 def get_embeddings(filenames, detector, model):
-    # extract faces
+    # extract largest face in each filename
     faces = [extract_face(f, detector) for f in filenames]
     # convert into an array of samples
     try:
@@ -171,61 +171,71 @@ mismatched_pairs_train, mismatched_pairs_test = train_test_split(mismatched_pair
 # print("mismatched_pairs_train: ", mismatched_pairs_train.shape)
 # print("mismatched_pairs_test: ", mismatched_pairs_test.shape)
 
-# Load the model
-model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
-detector = mtcnn.MTCNN()
+
+
+
+def matched_pair_evaluate(matched_pairs_test):
+    # Load the model
+    model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+    detector = mtcnn.MTCNN()
+    scores = []
+    same = []
+    # Get the first 100 pairs of matched pairs
+    for i in range(len(matched_pairs_test)):
+        filenames = [matched_pairs_test.iloc[i, 1], matched_pairs_test.iloc[i, 2]]
+        print(filenames)
+        embeddings = get_embeddings(filenames, detector, model)
+        if embeddings is None:
+            print("No face detected")
+            continue
+        score = is_match(embeddings[0], embeddings[1])
+        # Attach the score as a new column
+        scores.append(score)
+        # Attach whether the faces are the same as a new column
+        same.append((lambda a: a <= 0.5)(score))
+    matched_pairs_test["score"] = scores
+    matched_pairs_test["same"] = same
+    # Save as csv file
+    matched_pairs_test.to_csv("matched_pairs_test_result.csv")
+    # Calculate accuracy
+    matched_pairs_accuracy = matched_pairs_test["same"].sum() / len(matched_pairs_test)
+    print("Accuracy: ", matched_pairs_accuracy)
+
+
 # Iterate through matched_pairs_test and extract faces
-scores = []
-same = []
+matched_pair_evaluate(matched_pairs_test)
 
-# Get the first 100 pairs of matched pairs
 
-for i in range(len(matched_pairs_test)):
-    filenames = [matched_pairs_test.iloc[i, 1], matched_pairs_test.iloc[i, 2]]
-    print(filenames)
-    embeddings = get_embeddings(filenames, detector, model)
-    if embeddings is None:
-        print("No face detected")
-        continue
-    score = is_match(embeddings[0], embeddings[1])
-    # Attach the score as a new column
-    scores.append(score)
-    # Attach whether the faces are the same as a new column
-    same.append((lambda a: a <= 0.5)(score))
+def mismatched_pairs_evaluate(mismatched_pair_test):
+    # Load the model
+    model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+    detector = mtcnn.MTCNN()
+    scores = []
+    same = []
+    # Iterate through mismatched_pairs_test and extract faces
+    for i in range(len(mismatched_pairs_test)):
+        filenames = [mismatched_pairs_test.iloc[i, 1], mismatched_pairs_test.iloc[i, 3]]
+        print(filenames)
+        embeddings = get_embeddings(filenames, detector, model)
+        if embeddings is None:
+            print("No face detected")
+            continue
+        score = is_match(embeddings[0], embeddings[1])
+        # Attach the score as a new column
+        scores.append(score)
+        # Attach whether the faces are the same as a new column
+        same.append((lambda a: a <= 0.5)(score))
+    mismatched_pairs_test["score"] = scores
+    mismatched_pairs_test["same"] = same
+    # Save as csv file
+    mismatched_pairs_test.to_csv("mismatched_pairs_test_result.csv")
+    # Calculate accuracy
+    mismatched_pairs_accuracy = (len(mismatched_pairs_test) - mismatched_pairs_test["same"].sum()) / len(
+        mismatched_pairs_test)
+    print("Accuracy: ", mismatched_pairs_accuracy)
 
-matched_pairs_test["score"] = scores
-matched_pairs_test["same"] = same
-# Save as csv file
-matched_pairs_test.to_csv("matched_pairs_test_result.csv")
-# Calculate accuracy
-matched_pairs_accuracy = matched_pairs_test["same"].sum() / len(matched_pairs_test)
-print("Accuracy: ", matched_pairs_accuracy)
 
-# Get the first 100 faces
-
-scores = []
-same = []
-# Iterate through mismatched_pairs_test and extract faces
-for i in range(len(mismatched_pairs_test)):
-    filenames = [mismatched_pairs_test.iloc[i, 1], mismatched_pairs_test.iloc[i, 3]]
-    print(filenames)
-    embeddings = get_embeddings(filenames, detector, model)
-    if embeddings is None:
-        print("No face detected")
-        continue
-    score = is_match(embeddings[0], embeddings[1])
-    # Attach the score as a new column
-    scores.append(score)
-    # Attach whether the faces are the same as a new column
-    same.append((lambda a: a <= 0.5)(score))
-
-mismatched_pairs_test["score"] = scores
-mismatched_pairs_test["same"] = same
-# Save as csv file
-mismatched_pairs_test.to_csv("mismatched_pairs_test_result.csv")
-# Calculate accuracy
-mismatched_pairs_accuracy = (len(mismatched_pairs_test) - mismatched_pairs_test["same"].sum()) / len(mismatched_pairs_test)
-print("Accuracy: ", mismatched_pairs_accuracy)
+mismatched_pairs_evaluate(mismatched_pairs_test)
 
 # filenames =  [".\\content\\dataset\\img1.jpg", ".\\content\\dataset\\img2.jpg"]
 # print(filenames)
