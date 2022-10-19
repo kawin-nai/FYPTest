@@ -101,7 +101,7 @@ def is_match(known_embedding, candidate_embedding, thresh=0.5):
 
 
 # Root image paths
-root_path = "./content/mfr2/"
+root_path = "./content/faces_wild/lfw-deepfunneled_masked/"
 
 # Read pairs and split into matched_pairs and mismatched_pairs
 pairs = pd.read_csv(root_path + "pairs.csv", sep=" ", header=None, names=["name1", "path1", "name2", "path2"])
@@ -130,6 +130,7 @@ mismatched_pairs_train, mismatched_pairs_test = train_test_split(mismatched_pair
 # Create train and test sets
 train = pd.concat([matched_pairs_train, mismatched_pairs_train])
 test = pd.concat([matched_pairs_test, mismatched_pairs_test])
+
 
 # Evaluate model
 def matched_pair_evaluate(matched_pairs):
