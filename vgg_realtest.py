@@ -1,5 +1,6 @@
+import vgg_scratch
 from vgg_utils import *
-
+from vgg_scratch import *
 
 img_count = 0
 face_count = 0
@@ -66,17 +67,17 @@ mismatched_pairs["imagenum2"] = root_path + mismatched_pairs.name2 + "\\" + mism
 matched_pairs_train, matched_pairs_test = train_test_split(matched_pairs, test_size=0.2)
 mismatched_pairs_train, mismatched_pairs_test = train_test_split(mismatched_pairs, test_size=0.2)
 
+
 # print("matched_pairs_train: ", matched_pairs_train.shape)
 # print("matched_pairs_test: ", matched_pairs_test.shape)
 # print("mismatched_pairs_train: ", mismatched_pairs_train.shape)
 # print("mismatched_pairs_test: ", mismatched_pairs_test.shape)
 
 
-
-
 def matched_pair_evaluate(matched_pairs_test):
     # Load the model
-    model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+    model = vgg_scratch.define_model()
+    vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
     detector = mtcnn.MTCNN()
     scores = []
     same = []
@@ -84,22 +85,22 @@ def matched_pair_evaluate(matched_pairs_test):
     for i in range(len(matched_pairs_test)):
         filenames = [matched_pairs_test.iloc[i, 1], matched_pairs_test.iloc[i, 2]]
         print(filenames)
-        embeddings = get_embeddings(filenames, detector, model)
-        if embeddings is None:
+        embeddings = get_embeddings(filenames, detector, vgg_descriptor)
+        if embeddings is not None:
+            score = is_match(embeddings[0], embeddings[1])
+            scores.append(score)
+            same.append((lambda a: a <= 0.5)(score))
+        else:
             print("No face detected")
-            continue
-        score = is_match(embeddings[0], embeddings[1])
-        # Attach the score as a new column
-        scores.append(score)
-        # Attach whether the faces are the same as a new column
-        same.append((lambda a: a <= 0.5)(score))
+            scores.append(None)
+            same.append(None)
     matched_pairs_test["score"] = scores
     matched_pairs_test["same"] = same
     # Save as csv file
     matched_pairs_test.to_csv("matched_pairs_test_result.csv")
     # Calculate accuracy
-    matched_pairs_accuracy = matched_pairs_test["same"].sum() / len(matched_pairs_test)
-    print("Accuracy: ", matched_pairs_accuracy)
+    accuracy = len(matched_pairs[matched_pairs["same"] == True]) / len(matched_pairs)
+    print("Accuracy: ", accuracy)
 
 
 # Iterate through matched_pairs_test and extract faces
@@ -108,7 +109,8 @@ matched_pair_evaluate(matched_pairs_test)
 
 def mismatched_pairs_evaluate(mismatched_pair_test):
     # Load the model
-    model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+    model = vgg_scratch.define_model()
+    vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
     detector = mtcnn.MTCNN()
     scores = []
     same = []
@@ -116,23 +118,22 @@ def mismatched_pairs_evaluate(mismatched_pair_test):
     for i in range(len(mismatched_pairs_test)):
         filenames = [mismatched_pairs_test.iloc[i, 1], mismatched_pairs_test.iloc[i, 3]]
         print(filenames)
-        embeddings = get_embeddings(filenames, detector, model)
-        if embeddings is None:
+        embeddings = get_embeddings(filenames, detector, vgg_descriptor)
+        if embeddings is not None:
+            score = is_match(embeddings[0], embeddings[1])
+            scores.append(score)
+            same.append((lambda a: a <= 0.5)(score))
+        else:
             print("No face detected")
-            continue
-        score = is_match(embeddings[0], embeddings[1])
-        # Attach the score as a new column
-        scores.append(score)
-        # Attach whether the faces are the same as a new column
-        same.append((lambda a: a <= 0.5)(score))
+            scores.append(None)
+            same.append(None)
     mismatched_pairs_test["score"] = scores
     mismatched_pairs_test["same"] = same
     # Save as csv file
     mismatched_pairs_test.to_csv("mismatched_pairs_test_result.csv")
     # Calculate accuracy
-    mismatched_pairs_accuracy = (len(mismatched_pairs_test) - mismatched_pairs_test["same"].sum()) / len(
-        mismatched_pairs_test)
-    print("Accuracy: ", mismatched_pairs_accuracy)
+    accuracy = len(mismatched_pairs[mismatched_pairs["same"] == False]) / len(mismatched_pairs)
+    print("Accuracy: ", accuracy)
 
 
 mismatched_pairs_evaluate(mismatched_pairs_test)

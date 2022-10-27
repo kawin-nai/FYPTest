@@ -6,12 +6,15 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from tensorflow.keras import backend as K
 import mtcnn
 from scipy.spatial.distance import cosine
 from sklearn.model_selection import train_test_split
 from PIL import Image
 from keras_vggface.vggface import VGGFace
-from keras_vggface.utils import preprocess_input
+# from keras_vggface.utils import preprocess_input
+from tensorflow.keras.applications import vgg16
+# from tensorflow.keras.applications.imagenet_utils import preprocess_input
 from scipy.spatial import distance
 import cv2
 
@@ -47,7 +50,10 @@ def extract_faces(img_path, detector, required_size=(224, 224)):
 
 
 def extract_face(path, detector, required_size=(224, 224)):
-    img = plt.imread(path)
+    try:
+        img = plt.imread(path)
+    except:
+        return None
     faces = detector.detect_faces(img)
     if not faces:
         return None
@@ -73,22 +79,75 @@ def draw_faces(path, faces):
     plt.show()
 
 
+def preprocess_input(x, data_format=None, version=1):
+    x_temp = np.copy(x)
+    if data_format is None:
+        data_format = K.image_data_format()
+    assert data_format in {'channels_last', 'channels_first'}
+
+    if version == 1:
+        if data_format == 'channels_first':
+            x_temp = x_temp[:, ::-1, ...]
+            x_temp[:, 0, :, :] -= 93.5940
+            x_temp[:, 1, :, :] -= 104.7624
+            x_temp[:, 2, :, :] -= 129.1863
+        else:
+            x_temp = x_temp[..., ::-1]
+            x_temp[..., 0] -= 93.5940
+            x_temp[..., 1] -= 104.7624
+            x_temp[..., 2] -= 129.1863
+
+    elif version == 2:
+        if data_format == 'channels_first':
+            x_temp = x_temp[:, ::-1, ...]
+            x_temp[:, 0, :, :] -= 91.4953
+            x_temp[:, 1, :, :] -= 103.8827
+            x_temp[:, 2, :, :] -= 131.0912
+        else:
+            x_temp = x_temp[..., ::-1]
+            x_temp[..., 0] -= 91.4953
+            x_temp[..., 1] -= 103.8827
+            x_temp[..., 2] -= 131.0912
+    else:
+        raise NotImplementedError
+
+    return x_temp
+
+
 def get_embeddings(filenames, detector, model):
-    # extract largest face in each filename
-    faces = [extract_face(f, detector) for f in filenames]
-    # convert into an array of samples
     try:
+        # extract the largest face in each filename
+        # convert into an array of samples
+        faces = [extract_face(f, detector) for f in filenames]
         samples = np.asarray(faces, 'float32')
         # prepare the face for the model, e.g. center pixels
-        samples = preprocess_input(samples, version=2)
+        # samples = preprocess_input(samples, version=2)
+        samples = vgg16.preprocess_input(samples, data_format='channels_last')
         # create a vggface model
         # model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
         # perform prediction
         yhat = model.predict(samples)
         return yhat
-    except:
+    except Exception as e:
+        print(e)
         return None
 
+def get_embedding(filename, detector, model):
+    # extract largest face in each filename
+    face = [extract_face(filename, detector)]
+    # convert into an array of samples
+    try:
+        sample = np.asarray(face, 'float32')
+        # prepare the face for the model, e.g. center pixels
+        # samples = preprocess_input(samples, version=2)
+        sample = vgg16.preprocess_input(sample, data_format='channels_last')
+        # create a vggface model
+        # model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+        # perform prediction
+        yhat = model.predict(sample)
+        return yhat[0]
+    except Exception as e:
+        print(e)
 
 def is_match(known_embedding, candidate_embedding, thresh=0.5):
     # calculate distance between embeddings
