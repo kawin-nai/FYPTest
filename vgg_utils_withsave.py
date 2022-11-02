@@ -4,7 +4,6 @@ import tensorflow as tf
 import numpy as np
 import os
 import sys
-import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras import backend as K
 import mtcnn
@@ -20,15 +19,11 @@ import cv2
 
 
 def extract_faces(img_path, detector, required_size=(224, 224)):
-    global face_count
-    global img_count
     img = plt.imread(img_path)
-    img_count += 1
     faces = detector.detect_faces(img)
     print(img_path, len(faces))
     if not faces:
         return None
-    face_count += 1
     # Extract the list of faces in a photograph
     face_images = []
     for face in faces:
@@ -70,13 +65,31 @@ def extract_face(path, detector, required_size=(224, 224)):
     return face_array
 
 
-def draw_faces(path, faces):
+def draw_faces(faces):
     # draw each face separately
     for i in range(len(faces)):
         plt.subplot(1, len(faces), i + 1)
         plt.axis('off')
         plt.imshow(faces[i])
     plt.show()
+
+
+def take_photo(input_path):
+    cap = cv2.VideoCapture(0)
+    while cap.isOpened():
+        ret, frame = cap.read()
+        cv2.imshow('Webcam', frame)
+        # Press 'q' to capture the image
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    try:
+        if ret:
+            cv2.imwrite(os.path.join(input_path, "input.jpg"), frame)
+            print("Input picture taken")
+    except:
+        print("Error taking input picture")
+    cap.release()
+    cv2.destroyAllWindows()
 
 
 def preprocess_input(x, data_format=None, version=1):
@@ -114,23 +127,40 @@ def preprocess_input(x, data_format=None, version=1):
     return x_temp
 
 
-def get_embeddings(filenames, detector, model):
+def get_embeddings(filenames, detector, model, read_from_file=True, save_to_file=True):
     try:
         # extract the largest face in each filename
         # convert into an array of samples
-        faces = [extract_face(f, detector) for f in filenames]
-        samples = np.asarray(faces, 'float32')
-        # prepare the face for the model, e.g. center pixels
-
-        samples = vgg16.preprocess_input(samples, data_format='channels_last')
-        # create a vggface model
-
-        # perform prediction
-        yhat = model.predict(samples)
-        return yhat
+        embeddings = []
+        for file in filenames:
+            if read_from_file:
+                try:
+                    with open(file[:-4] + "_embedding.npy", "rb") as f:
+                        file_embedding = np.load(f, allow_pickle=True)
+                        embeddings.append(file_embedding)
+                except FileNotFoundError:
+                    face_embedding = get_embedding(file, detector, model)
+                    if face_embedding is not None:
+                        embeddings.append(face_embedding)
+                        if save_to_file:
+                            save_embeddings(face_embedding, file[:-4] + "_embedding.npy")
+                    else:
+                        print("Get embedding function return None", file)
+                        raise Exception("Get embedding function return None")
+            else:
+                face_embedding = get_embedding(file, detector, model)
+                if face_embedding is not None:
+                    embeddings.append(face_embedding)
+                    if save_to_file:
+                        save_embeddings(face_embedding, file[:-4] + "_embedding.npy")
+                else:
+                    print("Get embedding function return None", file)
+                    raise Exception("Get embedding function return None")
+        return embeddings
     except Exception as e:
         print(e)
         return None
+
 
 def get_embedding(filename, detector, model):
     # extract largest face in each filename
@@ -148,6 +178,8 @@ def get_embedding(filename, detector, model):
         return yhat[0]
     except Exception as e:
         print(e)
+        return None
+
 
 def is_match(known_embedding, candidate_embedding, thresh=0.5):
     # calculate distance between embeddings
@@ -157,3 +189,8 @@ def is_match(known_embedding, candidate_embedding, thresh=0.5):
     else:
         print('>face is NOT a Match (%.3f > %.3f)' % (score, thresh))
     return score
+
+
+def save_embeddings(embeddings, filename):
+    with open(filename, "wb") as f:
+        np.save(f, embeddings)

@@ -1,5 +1,5 @@
 import vgg_scratch
-from vgg_utils import *
+from vgg_utils_withsave import *
 from vgg_scratch import *
 
 # Test the images using one masked image and another normal image
@@ -67,6 +67,7 @@ def matched_pair_evaluate(matched_pairs):
     # Save to csv
     matched_pairs.to_csv(root_path + "matched_pairs_eval_masked.csv", index=False)
 
+
 def mismatched_pair_evaluate(mismatched_pairs):
     model = vgg_scratch.define_model()
     vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
@@ -92,6 +93,7 @@ def mismatched_pair_evaluate(mismatched_pairs):
     print("Accuracy: ", accuracy)
     # Save to csv
     mismatched_pairs.to_csv(root_path + "mismatched_pairs_eval_masked.csv", index=False)
+
 
 # faces = extract_faces("./content/mfr2/AdrianDunbar/AdrianDunbar_0002.png", mtcnn.MTCNN())
 # draw_faces("./content/mfr2/AdrianDunbar/AdrianDunbar_0002.png", faces)

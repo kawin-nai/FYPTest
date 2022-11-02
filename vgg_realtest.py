@@ -1,6 +1,9 @@
 import vgg_scratch
-from vgg_utils import *
+from vgg_utils_withsave import *
 from vgg_scratch import *
+
+
+# A file that tests the model on every available pair of images, with save_embeddings
 
 img_count = 0
 face_count = 0
@@ -63,9 +66,10 @@ mismatched_pairs["imagenum1"] = root_path + mismatched_pairs.name1 + "\\" + mism
 mismatched_pairs["imagenum2"] = root_path + mismatched_pairs.name2 + "\\" + mismatched_pairs.name2 + "_" + \
                                 mismatched_pairs["imagenum2"].apply(lambda x: '{0:0>4}'.format(x)) + ".jpg"
 
+
 # Split train and test
-matched_pairs_train, matched_pairs_test = train_test_split(matched_pairs, test_size=0.2)
-mismatched_pairs_train, mismatched_pairs_test = train_test_split(mismatched_pairs, test_size=0.2)
+# matched_pairs_train, matched_pairs_test = train_test_split(matched_pairs, test_size=0.2)
+# mismatched_pairs_train, mismatched_pairs_test = train_test_split(mismatched_pairs, test_size=0.2)
 
 
 # print("matched_pairs_train: ", matched_pairs_train.shape)
@@ -104,10 +108,10 @@ def matched_pair_evaluate(matched_pairs_test):
 
 
 # Iterate through matched_pairs_test and extract faces
-matched_pair_evaluate(matched_pairs_test)
+# matched_pair_evaluate(matched_pairs)
 
 
-def mismatched_pairs_evaluate(mismatched_pair_test):
+def mismatched_pairs_evaluate(mismatched_pairs_test):
     # Load the model
     model = vgg_scratch.define_model()
     vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
@@ -136,8 +140,48 @@ def mismatched_pairs_evaluate(mismatched_pair_test):
     print("Accuracy: ", accuracy)
 
 
-mismatched_pairs_evaluate(mismatched_pairs_test)
+input_folder = "./content/application_data"
+input_path = os.path.join(input_folder, "input_faces")
 
+
+def evaluate_from_input():
+    input_img_path = os.path.join(input_path, "input.jpg")
+    model = define_model()
+    vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
+    detector = mtcnn.MTCNN()
+    input_embedding = get_embedding(input_img_path, detector, vgg_descriptor)
+    if input_embedding is None:
+        raise Exception("No face detected in input image")
+
+    all_distance = {}
+    for persons in os.listdir(root_path):
+        # print(persons)
+        person_distance = []
+        images = []
+        for image in os.listdir(os.path.join(root_path, persons)):
+            full_img_path = os.path.join(root_path, persons, image)
+            if full_img_path[-3:] == "jpg":
+                images.append(full_img_path)
+            # Get embeddings
+        embeddings = get_embeddings(images, detector, vgg_descriptor)
+        if embeddings is None:
+            print("No faces detected")
+            continue
+        # Check if the input face is a match for the known face
+        # print("input_embedding", input_embedding)
+        for embedding in embeddings:
+            score = is_match(embedding, input_embedding)
+            person_distance.append(score)
+        # Calculate the average distance for each person
+        avg_distance = sum(person_distance) / len(person_distance)
+        all_distance[persons] = avg_distance
+    top_ten = sorted(all_distance.items(), key=lambda x: x[1])[:10]
+    return top_ten
+
+
+# mismatched_pairs_evaluate(mismatched_pairs)
+top_ten = evaluate_from_input()
+print(top_ten)
 # filenames =  [".\\content\\dataset\\img1.jpg", ".\\content\\dataset\\img2.jpg"]
 # print(filenames)
 # embeddings = get_embeddings(filenames)

@@ -1,4 +1,6 @@
+import vgg_scratch
 from vgg_utils import *
+from vgg_scratch import *
 import cv2
 
 img_path = "./content/application_data"
@@ -25,10 +27,12 @@ def take_photo():
     cv2.destroyAllWindows()
 
 
-take_photo()
+# take_photo()
 
 input_img_path = os.path.join(input_path, "input.jpg")
-model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+# model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+model = vgg_scratch.define_model()
+vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
 detector = mtcnn.MTCNN()
 
 all_distance = {}
@@ -39,7 +43,7 @@ for persons in os.listdir(verified_path):
         full_img_path = os.path.join(verified_path, persons, images)
         images = [full_img_path, input_img_path]
         # Get embeddings
-        embeddings = get_embeddings(images, detector, model)
+        embeddings = get_embeddings(images, detector, vgg_descriptor, full_img_path)
         if embeddings is None:
             print("No face detected")
             continue
