@@ -20,8 +20,8 @@ img_path = ".\\content\\faces_wild"
 # print("Total images: ", img_count)
 # print("Total faces: ", face_count)
 
-# Root image paths
-root_path = ".\\content\\faces_wild\\lfw-deepfunneled\\lfw-deepfunneled\\"
+# Root image paths for mounted file share (small sample)
+root_path = "Z:/small_sample"
 
 # Prepare faces_in_the_wild dataset
 lfw_allnames = pd.read_csv(".\\content\\faces_wild\\lfw_allnames.csv")

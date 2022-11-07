@@ -11,9 +11,8 @@ from scipy.spatial.distance import cosine
 from sklearn.model_selection import train_test_split
 from PIL import Image
 from keras_vggface.vggface import VGGFace
-# from keras_vggface.utils import preprocess_input
 from tensorflow.keras.applications import vgg16
-# from tensorflow.keras.applications.imagenet_utils import preprocess_input
+from tensorflow.keras.applications.imagenet_utils import preprocess_input
 from scipy.spatial import distance
 import cv2
 
@@ -92,39 +91,39 @@ def take_photo(input_path):
     cv2.destroyAllWindows()
 
 
-def preprocess_input(x, data_format=None, version=1):
-    x_temp = np.copy(x)
-    if data_format is None:
-        data_format = K.image_data_format()
-    assert data_format in {'channels_last', 'channels_first'}
-
-    if version == 1:
-        if data_format == 'channels_first':
-            x_temp = x_temp[:, ::-1, ...]
-            x_temp[:, 0, :, :] -= 93.5940
-            x_temp[:, 1, :, :] -= 104.7624
-            x_temp[:, 2, :, :] -= 129.1863
-        else:
-            x_temp = x_temp[..., ::-1]
-            x_temp[..., 0] -= 93.5940
-            x_temp[..., 1] -= 104.7624
-            x_temp[..., 2] -= 129.1863
-
-    elif version == 2:
-        if data_format == 'channels_first':
-            x_temp = x_temp[:, ::-1, ...]
-            x_temp[:, 0, :, :] -= 91.4953
-            x_temp[:, 1, :, :] -= 103.8827
-            x_temp[:, 2, :, :] -= 131.0912
-        else:
-            x_temp = x_temp[..., ::-1]
-            x_temp[..., 0] -= 91.4953
-            x_temp[..., 1] -= 103.8827
-            x_temp[..., 2] -= 131.0912
-    else:
-        raise NotImplementedError
-
-    return x_temp
+# def preprocess_input(x, data_format=None, version=1):
+#     x_temp = np.copy(x)
+#     if data_format is None:
+#         data_format = K.image_data_format()
+#     assert data_format in {'channels_last', 'channels_first'}
+#
+#     if version == 1:
+#         if data_format == 'channels_first':
+#             x_temp = x_temp[:, ::-1, ...]
+#             x_temp[:, 0, :, :] -= 93.5940
+#             x_temp[:, 1, :, :] -= 104.7624
+#             x_temp[:, 2, :, :] -= 129.1863
+#         else:
+#             x_temp = x_temp[..., ::-1]
+#             x_temp[..., 0] -= 93.5940
+#             x_temp[..., 1] -= 104.7624
+#             x_temp[..., 2] -= 129.1863
+#
+#     elif version == 2:
+#         if data_format == 'channels_first':
+#             x_temp = x_temp[:, ::-1, ...]
+#             x_temp[:, 0, :, :] -= 91.4953
+#             x_temp[:, 1, :, :] -= 103.8827
+#             x_temp[:, 2, :, :] -= 131.0912
+#         else:
+#             x_temp = x_temp[..., ::-1]
+#             x_temp[..., 0] -= 91.4953
+#             x_temp[..., 1] -= 103.8827
+#             x_temp[..., 2] -= 131.0912
+#     else:
+#         raise NotImplementedError
+#
+#     return x_temp
 
 
 def get_embeddings(filenames, detector, model, read_from_file=True, save_to_file=True):
@@ -170,7 +169,7 @@ def get_embedding(filename, detector, model):
         sample = np.asarray(face, 'float32')
         # prepare the face for the model, e.g. center pixels
         # samples = preprocess_input(samples, version=2)
-        sample = vgg16.preprocess_input(sample, data_format='channels_last')
+        sample = preprocess_input(sample, data_format='channels_last')
         # create a vggface model
         # model = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
         # perform prediction
@@ -181,7 +180,7 @@ def get_embedding(filename, detector, model):
         return None
 
 
-def is_match(known_embedding, candidate_embedding, thresh=0.5):
+def is_match(known_embedding, candidate_embedding, thresh=0.4):
     # calculate distance between embeddings
     score = cosine(known_embedding, candidate_embedding)
     if score <= thresh:
