@@ -187,7 +187,7 @@ def evaluate_from_input(mode="avg"):
 
 
 # mismatched_pairs_evaluate(mismatched_pairs)
-take_photo(input_path)
+# take_photo(input_path)
 top_ten = evaluate_from_input(mode="avg")
 print(top_ten)
 # filenames =  [".\\content\\dataset\\img1.jpg", ".\\content\\dataset\\img2.jpg"]
