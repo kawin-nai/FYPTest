@@ -1,7 +1,8 @@
+import json
+
 import vgg_scratch
 from vgg_utils_withsave import *
 from vgg_scratch import *
-
 
 # A file that tests the model on every available pair of images, with save_embeddings
 # Also has a function to test the input image against the database
@@ -78,34 +79,45 @@ mismatched_pairs["imagenum2"] = root_path + mismatched_pairs.name2 + "\\" + mism
 # print("mismatched_pairs_train: ", mismatched_pairs_train.shape)
 # print("mismatched_pairs_test: ", mismatched_pairs_test.shape)
 
+threshold = (0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95)
+threshold_dict = dict()
 
 def matched_pair_evaluate(matched_pairs_test):
-    # Load the model
-    model = vgg_scratch.define_model()
-    vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
-    detector = mtcnn.MTCNN()
-    scores = []
-    same = []
-    # Get the first 100 pairs of matched pairs
-    for i in range(len(matched_pairs_test)):
-        filenames = [matched_pairs_test.iloc[i, 1], matched_pairs_test.iloc[i, 2]]
-        print(filenames)
-        embeddings = get_embeddings(filenames, detector, vgg_descriptor)
-        if embeddings is not None:
-            score = is_match(embeddings[0], embeddings[1])
-            scores.append(score)
-            same.append((lambda a: a <= 0.5)(score))
-        else:
-            print("No face detected")
-            scores.append(None)
-            same.append(None)
-    matched_pairs_test["score"] = scores
-    matched_pairs_test["same"] = same
-    # Save as csv file
-    matched_pairs_test.to_csv("matched_pairs_test_result.csv")
-    # Calculate accuracy
-    accuracy = len(matched_pairs[matched_pairs["same"] == True]) / len(matched_pairs)
-    print("Accuracy: ", accuracy)
+    dict_list = []
+    for t in threshold:
+        cur_threshold_dict = dict()
+        # Load the model
+        model = vgg_scratch.define_model()
+        vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
+        detector = mtcnn.MTCNN()
+        scores = []
+        same = []
+        # Get the first 100 pairs of matched pairs
+        for i in range(len(matched_pairs_test)):
+            filenames = [matched_pairs_test.iloc[i, 1], matched_pairs_test.iloc[i, 2]]
+            # print(filenames)
+            embeddings = get_embeddings(filenames, detector, vgg_descriptor)
+            if embeddings is not None:
+                score = is_match(embeddings[0], embeddings[1])
+                scores.append(score)
+                same.append((lambda a: a <= t)(score))
+            else:
+                # print("No face detected")
+                scores.append(None)
+                same.append(None)
+        matched_pairs_test["score"] = scores
+        matched_pairs_test["same"] = same
+        # Save as csv file
+        # matched_pairs_test.to_csv("matched_pairs_test_result.csv")
+        # Calculate accuracy
+
+        accuracy = len(matched_pairs[matched_pairs["same"] == True]) / (len(matched_pairs[matched_pairs["same"] == True]) + len(matched_pairs[matched_pairs["same"] == False]))
+        print("Accuracy: ", accuracy, "Threshold: ", t)
+        cur_threshold_dict["threshold"] = t
+        cur_threshold_dict["accuracy"] = accuracy
+
+        dict_list.append(cur_threshold_dict)
+    threshold_dict["matched_pairs"] = dict_list
 
 
 # Iterate through matched_pairs_test and extract faces
@@ -113,36 +125,48 @@ def matched_pair_evaluate(matched_pairs_test):
 
 
 def mismatched_pairs_evaluate(mismatched_pairs_test):
-    # Load the model
-    model = vgg_scratch.define_model()
-    vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
-    detector = mtcnn.MTCNN()
-    scores = []
-    same = []
-    # Iterate through mismatched_pairs_test and extract faces
-    for i in range(len(mismatched_pairs_test)):
-        filenames = [mismatched_pairs_test.iloc[i, 1], mismatched_pairs_test.iloc[i, 3]]
-        print(filenames)
-        embeddings = get_embeddings(filenames, detector, vgg_descriptor)
-        if embeddings is not None:
-            score = is_match(embeddings[0], embeddings[1])
-            scores.append(score)
-            same.append((lambda a: a <= 0.5)(score))
-        else:
-            print("No face detected")
-            scores.append(None)
-            same.append(None)
-    mismatched_pairs_test["score"] = scores
-    mismatched_pairs_test["same"] = same
-    # Save as csv file
-    mismatched_pairs_test.to_csv("mismatched_pairs_test_result.csv")
-    # Calculate accuracy
-    accuracy = len(mismatched_pairs[mismatched_pairs["same"] == False]) / len(mismatched_pairs)
-    print("Accuracy: ", accuracy)
+    dict_list = []
+    for t in threshold:
+        # Load the model
+        model = vgg_scratch.define_model()
+        vgg_descriptor = Model(inputs=model.layers[0].input, outputs=model.layers[-2].output)
+        detector = mtcnn.MTCNN()
+        scores = []
+        same = []
+        # Iterate through mismatched_pairs_test and extract faces
+        for i in range(len(mismatched_pairs_test)):
+            filenames = [mismatched_pairs_test.iloc[i, 1], mismatched_pairs_test.iloc[i, 3]]
+            # print(filenames)
+            embeddings = get_embeddings(filenames, detector, vgg_descriptor)
+            if embeddings is not None:
+                score = is_match(embeddings[0], embeddings[1])
+                scores.append(score)
+                same.append((lambda a: a <= t)(score))
+            else:
+                # print("No face detected")
+                scores.append(None)
+                same.append(None)
+        mismatched_pairs_test["score"] = scores
+        mismatched_pairs_test["same"] = same
+        # Save as csv file
+        # mismatched_pairs_test.to_csv("mismatched_pairs_test_result.csv")
+        # Calculate accuracy
+        accuracy = len(mismatched_pairs[mismatched_pairs["same"] == False]) / (len(
+            mismatched_pairs[mismatched_pairs["same"] == False] ) + len(
+            mismatched_pairs[mismatched_pairs["same"] == True]))
+        print(mismatched_pairs_test)
+        print("Accuracy: ", accuracy, "Threshold: ", t)
+        cur_threshold_dict = dict()
+        cur_threshold_dict["threshold"] = t
+        cur_threshold_dict["accuracy"] = accuracy
+
+        dict_list.append(cur_threshold_dict)
+    threshold_dict["mismatched_pairs"] = dict_list
 
 
 input_folder = "./content/application_data"
 input_path = os.path.join(input_folder, "input_faces")
+verified_path_in_appdata = os.path.join(input_folder, "verified_faces")
 
 
 def evaluate_from_input(mode="avg"):
@@ -171,7 +195,7 @@ def evaluate_from_input(mode="avg"):
         # Check if the input face is a match for the known face
         # print("input_embedding", input_embedding)
         for embedding in embeddings:
-            score = is_match(embedding, input_embedding)
+            score = is_match(embedding, input_embedding, print_out=True)
             person_distance.append(score)
         # Calculate the average distance for each person
         if mode == "avg":
@@ -186,10 +210,12 @@ def evaluate_from_input(mode="avg"):
     return top_ten
 
 
-# mismatched_pairs_evaluate(mismatched_pairs)
+mismatched_pairs_evaluate(mismatched_pairs)
+matched_pair_evaluate(matched_pairs)
+print(json.dumps(threshold_dict, indent=4))
 # take_photo(input_path)
-top_ten = evaluate_from_input(mode="avg")
-print(top_ten)
+# top_ten = evaluate_from_input(mode="avg")
+# print(top_ten)
 # filenames =  [".\\content\\dataset\\img1.jpg", ".\\content\\dataset\\img2.jpg"]
 # print(filenames)
 # embeddings = get_embeddings(filenames)
