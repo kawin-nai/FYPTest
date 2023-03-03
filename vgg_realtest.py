@@ -213,6 +213,8 @@ def evaluate_from_input(mode="avg"):
 mismatched_pairs_evaluate(mismatched_pairs)
 matched_pair_evaluate(matched_pairs)
 print(json.dumps(threshold_dict, indent=4))
+with open('comprehensive_result.json', 'w') as f:
+    json.dump(threshold_dict, f, indent=2)
 # take_photo(input_path)
 # top_ten = evaluate_from_input(mode="avg")
 # print(top_ten)
