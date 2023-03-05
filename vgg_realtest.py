@@ -61,7 +61,7 @@ mismatched_pairs["imagenum2"] = root_path + mismatched_pairs.name2 + "\\" + mism
 
 
 threshold = (
-0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25,
+0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25,
 1.3, 1.35, 1.4)
 mode = ("l2", "cosine")
 # mode = ("cosine",)
@@ -193,10 +193,10 @@ def evaluate(real_pairs):
             evaluate_pairs = test_pairs[test_pairs["score"].notna()]
 
             # Calculate metrics
-            true_positive = len(evaluate_pairs[(evaluate_pairs["same"] == True) & (evaluate_pairs["same"] == evaluate_pairs["actual"])])
-            true_negative = len(evaluate_pairs[(evaluate_pairs["same"] == False) & (evaluate_pairs["same"] == evaluate_pairs["actual"])])
-            false_positive = len(evaluate_pairs[(evaluate_pairs["same"] == True) & (evaluate_pairs["same"] != evaluate_pairs["actual"])])
-            false_negative = len(evaluate_pairs[(evaluate_pairs["same"] == False) & (evaluate_pairs["same"] != evaluate_pairs["actual"])])
+            true_positive = len(evaluate_pairs[(evaluate_pairs["same"] is True) & (evaluate_pairs["same"] == evaluate_pairs["actual"])])
+            true_negative = len(evaluate_pairs[(evaluate_pairs["same"] is False) & (evaluate_pairs["same"] == evaluate_pairs["actual"])])
+            false_positive = len(evaluate_pairs[(evaluate_pairs["same"] is True) & (evaluate_pairs["same"] != evaluate_pairs["actual"])])
+            false_negative = len(evaluate_pairs[(evaluate_pairs["same"] is False) & (evaluate_pairs["same"] != evaluate_pairs["actual"])])
 
             # Calculate accuracy
             accuracy = (true_positive + true_negative) / (true_positive + true_negative + false_positive + false_negative)
@@ -283,7 +283,86 @@ verified_path_in_appdata = os.path.join(input_folder, "verified_faces")
 
 with open('comprehensive_result_all.json', 'r') as f:
     data = json.load(f)
-    # print(data)
+
+    # l2
+    l2_list = data["l2"]
+    threshold_list = []
+    accuracy_list = []
+    precision_list = []
+    recall_list = []
+    f1_score_list = []
+    for i in l2_list:
+        threshold_list.append(i["threshold"])
+        accuracy_list.append(i["accuracy"])
+        precision_list.append(i["precision"])
+        recall_list.append(i["recall"])
+        f1_score_list.append(i["f1_score"])
+
+    plt.figure()
+    plt.subplot(2, 2, 1)
+    plt.xticks(np.arange(0.1, 1.5, 0.2))
+    plt.plot(threshold_list, accuracy_list, label="l2 accuracy")
+    plt.title("accuracy")
+
+    plt.subplot(2, 2, 2)
+    plt.xticks(np.arange(0.1, 1.5, 0.2))
+    plt.plot(threshold_list, precision_list, label="l2 precision")
+    plt.title("precision")
+
+    plt.subplot(2, 2, 3)
+    plt.xticks(np.arange(0.1, 1.5, 0.2))
+    plt.plot(threshold_list, recall_list, label="l2 recall")
+    plt.title("recall")
+
+    plt.subplot(2, 2, 4)
+    plt.xticks(np.arange(0.1, 1.5, 0.2))
+    plt.plot(threshold_list, f1_score_list, label="l2 f1_score")
+    plt.title("f1_score")
+
+    plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.25,
+                        wspace=0.35)
+    plt.show()
+
+    # cosine
+    cosine_list = data["cosine"]
+    threshold_list = []
+    accuracy_list = []
+    precision_list = []
+    recall_list = []
+    f1_score_list = []
+
+    for i in cosine_list:
+        threshold_list.append(i["threshold"])
+        accuracy_list.append(i["accuracy"])
+        precision_list.append(i["precision"])
+        recall_list.append(i["recall"])
+        f1_score_list.append(i["f1_score"])
+
+    plt.figure()
+    plt.subplot(2, 2, 1)
+    plt.xticks(np.arange(0.1, 1.5, 0.2))
+    plt.plot(threshold_list, accuracy_list, label="cosine accuracy")
+    plt.title("accuracy")
+
+    plt.subplot(2, 2, 2)
+    plt.xticks(np.arange(0.1, 1.5, 0.2))
+    plt.plot(threshold_list, precision_list, label="cosine precision")
+    plt.title("precision")
+
+    plt.subplot(2, 2, 3)
+    plt.xticks(np.arange(0.1, 1.5, 0.2))
+    plt.plot(threshold_list, recall_list, label="cosine recall")
+    plt.title("recall")
+
+    plt.subplot(2, 2, 4)
+    plt.xticks(np.arange(0.1, 1.5, 0.2))
+    plt.plot(threshold_list, f1_score_list, label="cosine f1_score")
+    plt.title("f1_score")
+
+    plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.25,
+                        wspace=0.35)
+    plt.show()
+
     top_three_l2 = dict()
     top_three_cosine = dict()
     for mode in data:
