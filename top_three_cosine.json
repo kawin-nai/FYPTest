@@ -1,0 +1,106 @@
+{
+  "accuracy": [
+    {
+      "mode": "cosine",
+      "threshold": 0.35,
+      "accuracy": 0.8871478579763293,
+      "precision": 0.93,
+      "recall": 0.8372790930310103,
+      "f1_score": 0.8812072293384805
+    },
+    {
+      "mode": "cosine",
+      "threshold": 0.4,
+      "accuracy": 0.8819803300550092,
+      "precision": 0.86656,
+      "recall": 0.9029676558852952,
+      "f1_score": 0.8843892880470282
+    },
+    {
+      "mode": "cosine",
+      "threshold": 0.3,
+      "accuracy": 0.8561426904484081,
+      "precision": 0.9759358288770054,
+      "recall": 0.7302434144714905,
+      "f1_score": 0.8353995803929049
+    }
+  ],
+  "precision": [
+    {
+      "mode": "cosine",
+      "threshold": 0.2,
+      "accuracy": 0.6866144357392899,
+      "precision": 0.9982190560997328,
+      "recall": 0.3737912637545849,
+      "f1_score": 0.5439107229500243
+    },
+    {
+      "mode": "cosine",
+      "threshold": 0.25,
+      "accuracy": 0.7819636606101017,
+      "precision": 0.9924286546301689,
+      "recall": 0.5681893964654885,
+      "f1_score": 0.72264631043257
+    },
+    {
+      "mode": "cosine",
+      "threshold": 0.3,
+      "accuracy": 0.8561426904484081,
+      "precision": 0.9759358288770054,
+      "recall": 0.7302434144714905,
+      "f1_score": 0.8353995803929049
+    }
+  ],
+  "recall": [
+    {
+      "mode": "cosine",
+      "threshold": 0.9,
+      "accuracy": 0.5030838473078847,
+      "precision": 0.501505016722408,
+      "recall": 1.0,
+      "f1_score": 0.6680031183873483
+    },
+    {
+      "mode": "cosine",
+      "threshold": 0.95,
+      "accuracy": 0.5005834305717619,
+      "precision": 0.5002502085070892,
+      "recall": 1.0,
+      "f1_score": 0.6668890371358683
+    },
+    {
+      "mode": "cosine",
+      "threshold": 1.0,
+      "accuracy": 0.5002500416736123,
+      "precision": 0.5000833750208438,
+      "recall": 1.0,
+      "f1_score": 0.6667407736771899
+    }
+  ],
+  "f1_score": [
+    {
+      "mode": "cosine",
+      "threshold": 0.4,
+      "accuracy": 0.8819803300550092,
+      "precision": 0.86656,
+      "recall": 0.9029676558852952,
+      "f1_score": 0.8843892880470282
+    },
+    {
+      "mode": "cosine",
+      "threshold": 0.35,
+      "accuracy": 0.8871478579763293,
+      "precision": 0.93,
+      "recall": 0.8372790930310103,
+      "f1_score": 0.8812072293384805
+    },
+    {
+      "mode": "cosine",
+      "threshold": 0.45,
+      "accuracy": 0.8456409401566928,
+      "precision": 0.7868807085524495,
+      "recall": 0.9479826608869624,
+      "f1_score": 0.8599516031457956
+    }
+  ]
+}

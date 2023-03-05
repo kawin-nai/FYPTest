@@ -7,7 +7,7 @@ import sys
 import matplotlib.pyplot as plt
 from tensorflow.keras import backend as K
 import mtcnn
-from scipy.spatial.distance import cosine
+from scipy.spatial.distance import cosine, euclidean, seuclidean
 from sklearn.model_selection import train_test_split
 from PIL import Image
 from keras_vggface.vggface import VGGFace
@@ -180,15 +180,47 @@ def get_embedding(filename, detector, model):
         return None
 
 
-def is_match(known_embedding, candidate_embedding, thresh=0.4, print_out=False):
-    # calculate distance between embeddings
-    score = cosine(known_embedding, candidate_embedding)
-    if print_out:
-        if score <= thresh:
-            print('>face is a Match (%.3f <= %.3f)' % (score, thresh))
-        else:
-            print('>face is NOT a Match (%.3f > %.3f)' % (score, thresh))
-    return score
+def is_match(known_embedding, candidate_embedding, thresh=0.4, print_out=False, mode="cosine"):
+    if mode == "cosine":
+        # calculate distance between embeddings
+        score = cosine(known_embedding, candidate_embedding)
+        if print_out:
+            if score <= thresh:
+                print('>face is a Match (%.3f <= %.3f)' % (score, thresh))
+            else:
+                print('>face is NOT a Match (%.3f > %.3f)' % (score, thresh))
+        return score
+    elif mode == "euclidean":
+        # score = euclidean(known_embedding, candidate_embedding)
+        score = find_euclidean_distance(known_embedding, candidate_embedding)
+        # print(mode, thresh, score)
+        if print_out:
+            if score <= thresh:
+                print('>face is a Match (%.3f <= %.3f)' % (score, thresh))
+            else:
+                print('>face is NOT a Match (%.3f > %.3f)' % (score, thresh))
+        return score
+    elif mode == "l2":
+        # score = np.linalg.norm(known_embedding - candidate_embedding)
+        score = find_euclidean_distance(l2_normalize(known_embedding), l2_normalize(candidate_embedding))
+        # print(mode, thresh, score)
+        if print_out:
+            if score <= thresh:
+                print('>face is a Match (%.3f <= %.3f)' % (score, thresh))
+            else:
+                print('>face is NOT a Match (%.3f > %.3f)' % (score, thresh))
+        return score
+
+
+def find_euclidean_distance(source_representation, test_representation):
+    euclidean_distance = source_representation - test_representation
+    euclidean_distance = np.sum(np.multiply(euclidean_distance, euclidean_distance))
+    euclidean_distance = np.sqrt(euclidean_distance)
+    return euclidean_distance
+
+
+def l2_normalize(x):
+    return x / np.sqrt(np.sum(np.multiply(x, x)))
 
 
 def save_embeddings(embeddings, filename):
