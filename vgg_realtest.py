@@ -59,10 +59,9 @@ mismatched_pairs["imagenum1"] = root_path + mismatched_pairs.name1 + "\\" + mism
 mismatched_pairs["imagenum2"] = root_path + mismatched_pairs.name2 + "\\" + mismatched_pairs.name2 + "_" + \
                                 mismatched_pairs["imagenum2"].apply(lambda x: '{0:0>4}'.format(x)) + ".jpg"
 
-
 threshold = (
-0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25,
-1.3, 1.35, 1.4)
+    0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1,
+    1.15, 1.2, 1.25, 1.3, 1.35, 1.4)
 mode = ("l2", "cosine")
 # mode = ("cosine",)
 threshold_dict = dict()
@@ -104,8 +103,8 @@ def matched_pair_evaluate(matched_pairs_test):
             # Calculate accuracy
 
             accuracy = len(matched_pairs[matched_pairs["same"] == True]) / (
-                        len(matched_pairs[matched_pairs["same"] == True]) + len(
-                    matched_pairs[matched_pairs["same"] == False]))
+                    len(matched_pairs[matched_pairs["same"] == True]) + len(
+                matched_pairs[matched_pairs["same"] == False]))
             print("Accuracy: ", accuracy, "Threshold: ", t, "Mode: ", m)
             cur_threshold_dict["threshold"] = t
             cur_threshold_dict["accuracy"] = accuracy
@@ -161,6 +160,8 @@ def mismatched_pairs_evaluate(mismatched_pairs_test):
 
 
 mode_list = dict()
+
+
 def evaluate(real_pairs):
     # Load the model
     model = vgg_scratch.define_model()
@@ -191,23 +192,34 @@ def evaluate(real_pairs):
 
             # Discard the pairs with score = None
             evaluate_pairs = test_pairs[test_pairs["score"].notna()]
+            # print(evaluate_pairs)
 
             # Calculate metrics
-            true_positive = len(evaluate_pairs[(evaluate_pairs["same"] is True) & (evaluate_pairs["same"] == evaluate_pairs["actual"])])
-            true_negative = len(evaluate_pairs[(evaluate_pairs["same"] is False) & (evaluate_pairs["same"] == evaluate_pairs["actual"])])
-            false_positive = len(evaluate_pairs[(evaluate_pairs["same"] is True) & (evaluate_pairs["same"] != evaluate_pairs["actual"])])
-            false_negative = len(evaluate_pairs[(evaluate_pairs["same"] is False) & (evaluate_pairs["same"] != evaluate_pairs["actual"])])
+            true_positive = len(evaluate_pairs[(evaluate_pairs["same"] == True) & (evaluate_pairs["same"] == evaluate_pairs["actual"])])
+            true_negative = len(evaluate_pairs[(evaluate_pairs["same"] == False) & (evaluate_pairs["same"] == evaluate_pairs["actual"])])
+            false_positive = len(evaluate_pairs[(evaluate_pairs["same"] == True) & (evaluate_pairs["actual"] == False)])
+            false_negative = len(evaluate_pairs[(evaluate_pairs["same"] == False) & (evaluate_pairs["same"] != evaluate_pairs["actual"])])
 
-            # Calculate accuracy
+            # Error handling
+            if true_positive == 0:
+                true_positive = 1
+            if true_negative == 0:
+                true_negative = 1
+            if false_positive == 0:
+                false_positive = 1
+            if false_negative == 0:
+                false_negative = 1
+
             accuracy = (true_positive + true_negative) / (true_positive + true_negative + false_positive + false_negative)
             precision = true_positive / (true_positive + false_positive)
             recall = true_positive / (true_positive + false_negative)
             f1_score = 2 * precision * recall / (precision + recall)
 
-            # print(test_pairs)
-            print("Accuracy: ", accuracy, "Precision: ", precision, "Recall: ", recall, "F1 Score: ", f1_score, "Threshold: ", t, "Mode: ", m)
+            print(evaluate_pairs)
+            print("Accuracy: ", accuracy, "Precision: ", precision, "Recall: ", recall, "F1 Score: ", f1_score,
+                  "Threshold: ", t, "Mode: ", m)
 
-    #         print("Accuracy: ", accuracy, "Threshold: ", t, "Mode: ", m)
+            #         print("Accuracy: ", accuracy, "Threshold: ", t, "Mode: ", m)
             cur_threshold_dict = dict()
             cur_threshold_dict["mode"] = m
             cur_threshold_dict["threshold"] = t
@@ -224,7 +236,6 @@ def evaluate(real_pairs):
 input_folder = "./content/application_data"
 input_path = os.path.join(input_folder, "input_faces")
 verified_path_in_appdata = os.path.join(input_folder, "verified_faces")
-
 
 # def evaluate_from_input(mode="avg"):
 #     input_img_path = os.path.join(input_path, "input.jpg")
@@ -269,17 +280,9 @@ verified_path_in_appdata = os.path.join(input_folder, "verified_faces")
 
 # mismatched_pairs_evaluate(mismatched_pairs)
 # matched_pair_evaluate(matched_pairs)
-# evaluate(testing_pairs)
-# print(json.dumps(threshold_dict, indent=4))
-# with open('comprehensive_result_all.json', 'w') as f:
-#     json.dump(mode_list, f, indent=2)
-# take_photo(input_path)
-# top_ten = evaluate_from_input(mode="avg")
-# print(top_ten)
-# filenames =  [".\\content\\dataset\\img1.jpg", ".\\content\\dataset\\img2.jpg"]
-# print(filenames)
-# embeddings = get_embeddings(filenames)
-# score = is_match(embeddings[0], embeddings[1])
+evaluate(testing_pairs)
+with open('comprehensive_result_all.json', 'w') as f:
+    json.dump(mode_list, f, indent=2)
 
 with open('comprehensive_result_all.json', 'r') as f:
     data = json.load(f)
